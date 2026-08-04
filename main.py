@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # today's four new tools, all from scikit-learn
-from sklearn.model_selection import train_test_split   # the split
+from sklearn.model_selection import GroupKFold, train_test_split   # the split
 from sklearn.pipeline import Pipeline                   # the idiom
 from sklearn.compose import ColumnTransformer           # per-column prep
 from sklearn.preprocessing import OneHotEncoder         # categories -> 0/1
@@ -33,15 +33,30 @@ df['price_clean'] = (
 
 # 4. Define and Apply Exclusion Rules (Day 1 Milestone)
 # Example rule: Remove €0 listings 
-exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) #exclusion rule: Remove €0 listings and cap at €1000
+fix_data = df[df['host_location'] == 'Athens, Greece']
+exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) & (df['host_location'] == 'Athens, Greece') #exclusion rule: Remove €0 listings and cap at €1000 and only include listings from Athens, Greece
 df_filtered = df[exclusion_rule].copy()
 # 5. Compute Do-Nothing Baseline (Mean & Log Mean)
 mean_baseline = df_filtered['price_clean'].mean()
 median_baseline = df_filtered['price_clean'].median()
-
+print(f"Total filtered listings: {len(df_filtered)}")
 print(f"Cleaned Do-Nothing Baseline (Mean): €{mean_baseline:.2f}")
 print(f"Median Price: €{median_baseline:.2f}")
 print(f"Max Price in Filtered Set: €{df_filtered['price_clean'].max():.2f}")
+
+X = df_filtered[['hosts_time_as_user_months', 'hosts_time_as_host_months', 'host_is_superhost', 'host_has_profile_pic', 'host_identity_verified', 'property_type', 'room_type', 'accommodates', 'bathrooms', 'bedrooms', 'beds', 'minimum_nights', 'maximum_nights','review_scores_rating', 'host_listings_count']]
+y = df_filtered['price_clean']
+gk5 = GroupKFold(n_splits=5)
+groups = df_filtered['host_id']
+gk5.split(X, y, groups) 
+
+
+for fold, (train_idx, test_idx) in enumerate(gk5.split(X, y, groups)):
+    print(f"Fold {fold + 1}")
+    print(f"Training listings: {len(train_idx)}")
+    print(f"Testing listings: {len(test_idx)}")
+
+
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 ax1.hist(df_filtered['price_clean'], bins=50, color='skyblue', edgecolor='black')
