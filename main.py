@@ -33,8 +33,7 @@ df['price_clean'] = (
 
 # 4. Define and Apply Exclusion Rules (Day 1 Milestone)
 # Example rule: Remove €0 listings 
-fix_data = df[df['host_location'] == 'Athens, Greece']
-exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) & (df['host_location'] == 'Athens, Greece') #exclusion rule: Remove €0 listings and cap at €1000 and only include listings from Athens, Greece
+exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) #exclusion rule: Remove €0 listings and cap at €1000
 df_filtered = df[exclusion_rule].copy()
 # 5. Compute Do-Nothing Baseline (Mean & Log Mean)
 mean_baseline = df_filtered['price_clean'].mean()
