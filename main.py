@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import GroupKFold, train_test_split   # the split
 from sklearn.pipeline import Pipeline                   # the idiom
 from sklearn.compose import ColumnTransformer           # per-column prep
-from sklearn.preprocessing import OneHotEncoder         # categories -> 0/1
+from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures         # categories -> 0/1
 from sklearn.linear_model import LinearRegression       # the model
 from sklearn.metrics import root_mean_squared_error     # the error measure
 from sklearn.impute import SimpleImputer                 # missing values
@@ -34,7 +34,7 @@ df['price_clean'] = (
 # 4. Define and Apply Exclusion Rules (Day 1 Milestone)
 # Example rule: Remove €0 listings 
 fix_data = df[df['host_location'] == 'Athens, Greece']
-exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) & (df['host_location'] == 'Athens, Greece') #exclusion rule: Remove €0 listings and cap at €1000 and only include listings from Athens, Greece
+exclusion_rule = (df['price_clean'] > 0) & (df['price_clean'] <= 1000) 
 df_filtered = df[exclusion_rule].copy()
 # 5. Compute Do-Nothing Baseline (Mean & Log Mean)
 mean_baseline = df_filtered['price_clean'].mean()
@@ -48,6 +48,7 @@ categorical_features = [
     'property_type',
     'room_type'
 ]
+reviews_per_month = (df_filtered['reviews_per_month'].replace(0, np.nan))
 numeric_features = [
     'hosts_time_as_user_months',
     'hosts_time_as_host_months',
@@ -61,7 +62,10 @@ numeric_features = [
     'minimum_nights',
     'maximum_nights',
     'host_listings_count',
-    'review_scores_rating'
+    'review_scores_rating',
+    'reviews_per_month'
+
+
     
 ]
 df_filtered1 = df_filtered.dropna(subset = numeric_features)
@@ -82,9 +86,12 @@ for fold, (train_idx, test_idx) in enumerate(gk5.split(X, y, groups)):
 
 categorical_features = [
     'property_type',
-    'room_type'
+    'room_type',
+    'neighbourhood_cleansed',
+    'amenities'
+
 ]
-bool_cols = ['host_is_superhost', 'host_has_profile_pic', 'host_identity_verified']
+bool_cols = ['host_is_superhost', 'host_has_profile_pic', 'host_identity_verified', 'has_availability',]
 
 numeric_features = [
     'hosts_time_as_user_months',
@@ -99,9 +106,37 @@ numeric_features = [
     'minimum_nights',
     'maximum_nights',
     'host_listings_count',
-    'review_scores_rating'
+    'review_scores_rating',
+    'latitude',
+    'longitude',
+    'reviews_per_month',
+    'number_of_reviews',
+    'number_of_reviews_ltm',
+    'review_scores_accuracy',
+    'review_scores_cleanliness',
+    'review_scores_checkin',
+    'review_scores_communication',
+    'review_scores_location',
+    'review_scores_value',
+    'maximum_maximum_nights',
+    'minimum_minimum_nights',
+    'maximum_minimum_nights',
+    'minimum_maximum_nights',
+    'maximum_nights_avg_ntm',
+    'availability_30',
+    'availability_60',
+    'availability_90',
+    'availability_365',
+    'availability_eoy',
+    'number_of_reviews_ly',
+    'estimated_occupancy_l365d'
+    
+
+
+
     
 ]
+print(f'Total X variables: {len(numeric_features) + len(categorical_features)}')
 
 for col in bool_cols:
     df_filtered[col] = df_filtered[col].map({'t': 1, 'f': 0})
@@ -128,7 +163,6 @@ preprocessor = ColumnTransformer(transformers=[
     ('num', 'passthrough', numeric_features),
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
 ])
-X_transformed = preprocessor.fit_transform(X)
 
 model = Pipeline(steps=[
     ('preprocessor', preprocessor),
@@ -158,3 +192,5 @@ for fold, (train_idx, test_idx) in enumerate(gk5.split(X, y, groups)):
 
 print(f"\nMean Model RMSE:    €{np.mean(fold_rmses):.2f}")
 print(f"Mean Baseline RMSE: €{np.mean(baseline_rmses):.2f}")
+
+
